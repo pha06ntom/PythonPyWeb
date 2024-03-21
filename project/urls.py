@@ -19,6 +19,7 @@ from django.conf import settings  # Чтобы была возможность �
 from django.conf.urls.static import static  # Чтобы подгрузить обработчик статических файлов
 
 urlpatterns = [
+    path('grappelli/', include('grappelli.urls')),
     path('admin/', admin.site.urls),
     path('', include('apps.app.urls')),
     path('train/', include('apps.db_train.urls')),
