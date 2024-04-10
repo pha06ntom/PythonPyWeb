@@ -123,6 +123,8 @@ class AuthorProfile(models.Model):
                                 blank=True,
                                 verbose_name="Стаж",
                                 help_text="Стаж в годах")
+    def __str__(self):
+        return self.author.username
 
 class Entry(models.Model):
     text = models.TextField(verbose_name="Текст статьи",
@@ -130,7 +132,13 @@ class Entry(models.Model):
     author = models.ForeignKey("Author", on_delete=models.CASCADE, related_name='entries')
     tags = models.ManyToManyField("Tag", related_name='entries')
 
+    def __str__(self):
+        return self.text
+
+
 class Tag(models.Model):
     name = models.CharField(max_length=50,
                             verbose_name="Название",
                             )
+    def __str__(self):
+        return f"#{self.name}"
