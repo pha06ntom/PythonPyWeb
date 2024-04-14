@@ -99,3 +99,56 @@ class AuthorREST(View):
                                 json_dumps_params={'ensure_ascii': False,
                                                    'indent': 4},
                                 )
+
+    def patch(self, request, id):
+        try:
+            author = Author.objects.get(id=id)  # Получаем объект
+            data = json.loads(request.body)
+
+            for key, value in data.items(): # Пробегаем по данным
+                setattr(author,key, value) # Устанавливаем соотвествующие значения в поля
+            author.clean_fields() # Запуск валидаций
+            author.save() # Сохранение в БД
+
+            response_data = {
+                'id': author.id,
+                'name': author.name,
+                'email': author.email
+            }
+            return JsonResponse(response_data,
+                                json_dumps_params={"ensure_ascii": False,
+                                                   "indent": 4},
+                                )
+        except Author.DoesNotExist:
+            return JsonResponse({'error': f'Автор с id={author.id} не найден'},
+                                status=404,
+                                json_dumps_params={"ensure_ascii": False,
+                                                   "indent": 4},
+                                )
+        except Exception as e:
+            return JsonResponse({'error': str(e)},
+                                status=400,
+                                json_dumps_params={"ensure_ascii": False,
+                                                   "indent": 4},
+                                )
+
+    def delete(self, request, id):
+        try:
+            author = Author.objects.get(id=id)
+            author.delete()
+            return JsonResponse({'message': 'Автор успешно удален'},
+                                json_dumps_params={'ensure_ascii': False,
+                                                   "indent": 4},
+                                )
+        except Author.DoesNotExist:
+            return JsonResponse({'error': 'Автор не найден'},
+                                status=404,
+                                json_dumps_params={'ensure_ascii': False,
+                                                   "indent": 4},
+                                )
+        except Exception as e:
+            return JsonResponse({'error': str(e)},
+                                status=400,
+                                json_dumps_params={'ensure_ascii': False,
+                                                   "indent": 4},
+                                )
