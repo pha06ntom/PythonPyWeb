@@ -4,6 +4,10 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt # чтобы post, put, patch, delete не требовали csrf токена (необязательно)
 from apps.db_train_alternative.models import Author
 from .serializers import AuthorModelSerializer
+from django.http import Http404
+from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import RetrieveModelMixin, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin
+from .serializers import AuthorSerializer
 
 class AuthorAPIView(APIView):
     @csrf_exempt
@@ -62,3 +66,31 @@ class AuthorAPIView(APIView):
 
         author.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class AuthorGenericAPIView(GenericAPIView, RetrieveModelMixin, ListModelMixin, CreateModelMixin, UpdateModelMixin,
+                           DestroyModelMixin):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+
+    def get(self, request, *args, **kwargs):
+        if kwargs.get(self.lookup_field):   # если бы передали id или pk
+            try:
+                # возвращаем 1 объект
+                return self.retrieve(request, *args, **kwargs)
+            except Http404:
+                return Response({'message': 'Автор не найден'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # иначе возврщаем список объектов
+            return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
