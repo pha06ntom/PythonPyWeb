@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, filters
 from django.views.decorators.csrf import csrf_exempt # чтобы post, put, patch, delete не требовали csrf токена (необязательно)
 from apps.db_train_alternative.models import Author
 from .serializers import AuthorModelSerializer
@@ -8,6 +8,12 @@ from django.http import Http404
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import RetrieveModelMixin, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from .serializers import AuthorSerializer
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+
 
 class AuthorAPIView(APIView):
     @csrf_exempt
@@ -94,3 +100,30 @@ class AuthorGenericAPIView(GenericAPIView, RetrieveModelMixin, ListModelMixin, C
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+class AuthorPagination(PageNumberPagination):
+    page_size = 5 # кол-во объектов на странице
+    page_size_query_param = 'page_size' # параметр запроса для настройки кол-ва объектов на странице
+    max_page_size = 1000 # максимальное кол-во объектов на странице
+
+class AuthorViewSet(ModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+    pagination_class = AuthorPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['name', 'email'] # Указываем для каких полей можем проводить фильтрацию
+    search_fields = ['email'] # Поля, по кот-ым будет выполняться поиск
+    ordering_fields = ['name', 'email'] # Поля, по кот-ым можно сортировать
+
+    # http_method_names = ['get', 'post'] ограничение поддерживаемых методов в представлении AuthorViewSet
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__contains=name)
+        return queryset
+    @action(detail=True, methods=['post'])
+    def my_action(self, request, pk=None):
+        # Пользовательская логика здесь
+        return Response({'message': f'Пользовательская функция для пользователя с pk={pk}'})
